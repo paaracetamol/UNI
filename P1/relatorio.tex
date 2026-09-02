@@ -1,0 +1,140 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[portuguese]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{listings}
+\usepackage{verbatim}
+
+\lstset{basicstyle=\ttfamily\footnotesize,frame=single,breaklines=true}
+
+\title{AC1 Trabalho Myvg}
+\author{Aluno Daniel Santos l70070, Aluno Bernardo Gamula l58440}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Objectivo}
+
+Este trabalho foi integralmente realizado pelos alunos Daniel Santos (l70070) e Bernardo Gamula (l58440) sem recurso a ferramentas de inteligência artificial.
+
+O programa lê o ficheiro .myvg, e interpreta os comandos \texttt{p}, \texttt{l} e \texttt{r} para criar a imagem ascii pretendida.
+
+Linhas vazias e linhas que comecam por \texttt{\#} sao ignoradas.
+
+\section{Rotinas}
+
+\begin{itemize}
+\item \texttt{sign}, \texttt{absv}: auxiliares para o algoritmo das linhas.
+\item \texttt{point}: poe um \texttt{\#} na posicao (x,y). Se cair fora da imagem nao faz nada.
+\item \texttt{line}: algoritmo de Bresenham.
+\item \texttt{rect}: faz 4 chamadas ao \texttt{line}.
+\item \texttt{initimg}: pede memoria ao sbrk e enche tudo de espacos.
+\item \texttt{readln}, \texttt{nextc}, \texttt{peekc}, \texttt{skipsp}, \texttt{pint}: o parser, le linha a linha.
+\item \texttt{readf}: abre o ficheiro, le, e chama o parser em loop.
+\item \texttt{prtimg}: imprime a imagem no ecra.
+\item \texttt{save}: escreve a imagem no ficheiro de saida.
+\end{itemize}
+
+\section{Notas}
+
+\textbf{Leitura}
+Ler 1 linha de cada vez.
+readln le byte a byte com a ecall do read (a2=1) ate ao \textbackslash{}n, e mete a linha num buffer (lbuf).
+Depois o peekc/nextc andam com um indice (lpos) por cima do lbuf, por isso o peek apenas le sem consumir.
+
+
+
+\textbf{Sem mul/div} 
+O enunciado diz que sao valorizados os trabalhos que nao usam mul/div/rem. Multiplicacao foi substituida por shifts:
+\begin{itemize}
+\item Mul var * 10 -> \texttt{pint}: \texttt{val*10 = (val<<3) + (val<<1)}.
+\item Index array de pointers (4b): \texttt{slli x, 2}.
+\item O \texttt{2*e} do Bresenham: \texttt{slli x, 1}.
+\end{itemize}
+
+
+
+
+
+\textbf{Ecalls} 
+Codigo foi feito para o RARS, portanto usa-se a tabela de ecalls do programa:
+\begin{verbatim}
+1024: open
+63:   read
+64:   write
+57:   close
+9:    sbrk
+10:   exit
+4:    print_str
+11:   print_char
+8:    read_str
+\end{verbatim}
+
+
+\textbf{Nota: \textbackslash{}n no fim do nome.} 
+O read\_string do RARS deixa \textbackslash{}n no fim do que o utilizador escreve,
+isso faz com q o open nunca encontre o ficheiro.
+Procuramos primeiro \texttt{\textbackslash{}n} no nome, depois \texttt{\textbackslash{}0}.
+
+\section{Bresenham}
+
+Fluxograma dado no enunciado:
+\begin{verbatim}
+dx = abs(x2 - x1)
+dy = -abs(y2 - y1)
+sx = sign(x2 - x1)
+sy = sign(y2 - y1)
+e  = dx + dy
+
+loop:
+    point(x1, y1)
+    if x1 == x2 and y1 == y2: stop
+    e2 = 2 * e
+    if e2 >= dy: e += dy; x1 += sx
+    if e2 <= dx: e += dx; y1 += sy
+\end{verbatim}
+
+
+
+Em asm o estado e' guardado em \texttt{s0..s9} 
+(x1, y1, x2, y2, dx, dy, sx, sy, e, e2), 
+com push/pop.
+
+
+
+
+
+\section{Exemplo}
+
+Input (\texttt{test.myvg}):
+(Input: "C:/..path../test.myvg")
+\begin{verbatim}
+10 10
+p 0 0
+r 7 7 9 9
+l 0 9 9 0
+\end{verbatim}
+
+Output ascii (\texttt{out.txt}):
+\begin{verbatim}
+#        #
+        #
+       #
+      #
+     #
+    #
+   #
+  #     ###
+ #      # #
+#       ###
+\end{verbatim}
+
+\section{Observacoes}
+
+A parte mais complexa neste trabalho foi o parser.
+Le 1 linha para o buffer, vai lendo char a char com um indice, o peek e next lêm e avancam nesse indice.
+O algoritmo das linhas so com inteiros funciona como esperado e nao precisa de nenhuma virgula flutuante.
+
+\end{document}
